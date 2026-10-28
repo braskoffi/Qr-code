@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Scanne ou génère un QR code stylé.">
+<title>QR Studio – Scanner &amp; Générer</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg1:#0f0c29;--bg2:#302b63;--card:rgba(255,255,255,.08);--tx:#f4f2ff;--mut:#b9b4e0;--bd:rgba(255,255,255,.18);--ac:linear-gradient(135deg,#7b2ff7,#f107a3)}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg1:#f3efff;--bg2:#ffd9ec;--card:rgba(255,255,255,.7);--tx:#25204a;--mut:#6a6492;--bd:rgba(80,60,160,.2)}}
+:root[data-theme="dark"]{--bg1:#0f0c29;--bg2:#302b63;--card:rgba(255,255,255,.08);--tx:#f4f2ff;--mut:#b9b4e0;--bd:rgba(255,255,255,.18)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--tx);background:linear-gradient(135deg,var(--bg1),var(--bg2));display:flex;justify-content:center;padding:20px 16px}
+.wrap{width:100%;max-width:440px}
+h1{font-size:26px;margin:4px 0 14px;text-align:center}
+.tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:5px;margin-bottom:16px}
+.tabs button{flex:1;border:0;border-radius:14px;padding:12px;font-size:15px;font-weight:600;color:var(--mut);background:transparent;cursor:pointer}
+.tabs button.on{background:var(--ac);color:#fff}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:24px;padding:20px;backdrop-filter:blur(14px)}
+.qrbox{background:#fff;border-radius:20px;padding:14px;display:flex;justify-content:center;box-shadow:0 12px 40px rgba(120,80,255,.35);margin-bottom:18px}
+.qrbox img{width:100%;max-width:300px;height:auto;display:block;border-radius:8px}
+.big{width:100%;height:auto;display:block;border-radius:18px;margin-bottom:16px}
+label{display:block;font-size:12px;color:var(--mut);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.08em}
+input[type=text],select{width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font-size:16px;outline:none}
+select option{color:#222}
+.btn{border:0;border-radius:14px;padding:14px 16px;font-size:15px;font-weight:600;color:#fff;background:var(--ac);cursor:pointer;text-decoration:none;display:block;text-align:center;width:100%}
+.btn.alt{background:var(--card);color:var(--tx);border:1px solid var(--bd);margin-top:10px}
+.sw{display:flex;gap:10px;flex-wrap:wrap}
+.sw button{width:44px;height:44px;border-radius:50%;border:3px solid transparent;cursor:pointer;padding:0}
+.sw button.on{border-color:var(--tx);transform:scale(1.1)}
+.hint{text-align:center;color:var(--mut);font-size:13px;margin-top:14px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>✨ QR Studio</h1>
+<div class="tabs"><button id="tS" class="on">Scanner</button><button id="tG">Générer</button></div>
+
+<div class="card" id="pS">
+<img class="big" alt="QR code à scanner" src="assets/qr-wishlist.jpeg">
+<a class="btn" href="https://www.amazon.fr/hz/wishlist/ls/XMPI9NCUXX0D?ref_=wl_share" target="_blank" rel="noopener noreferrer">Ouvrir la liste d’envies</a>
+<p class="hint">Scanne ce QR code avec l’appareil photo de ton téléphone, il mène à la liste d’envies Amazon.</p>
+</div>
+
+<div class="card hidden" id="pG">
+<div class="qrbox"><img id="out" alt="QR code"></div>
+<label for="txt">Lien ou texte</label>
+<input type="text" id="txt" value="https://www.amazon.fr/hz/wishlist/ls/XMPI9NCUXX0D?ref_=wl_share" autocomplete="off" autocapitalize="off" placeholder="Écris un lien…">
+<label>Couleurs</label>
+<div class="sw" id="sw"></div>
+<label for="dot">Style des points</label>
+<select id="dot"><option value="extra-rounded">Arrondi doux</option><option value="classy-rounded">Élégant</option><option value="dots">Perles</option><option value="rounded">Rond</option><option value="square">Classique</option></select>
+<label for="eye">Style des coins</label>
+<select id="eye"><option value="extra-rounded">Arrondi</option><option value="dot">Cercle</option><option value="square">Carré</option></select>
+<p class="hint">Le QR code se met à jour à chaque lettre. Appuie longuement dessus pour l’enregistrer.</p>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+<script>
+var $=function(i){return document.getElementById(i)};
+var P=[["#7b2ff7","#f107a3"],["#0061ff","#00d4ff"],["#11998e","#38ef7d"],["#f12711","#f5af19"],["#1a1a2e","#4a4e69"]];
+var cur=0,sw=$("sw"),timer;
+P.forEach(function(p,i){var b=document.createElement("button");b.style.background="linear-gradient(135deg,"+p[0]+","+p[1]+")";b.setAttribute("aria-label","Palette "+(i+1));b.onclick=function(){cur=i;mark();draw()};sw.appendChild(b)});
+function mark(){[].forEach.call(sw.children,function(b,i){b.className=i===cur?"on":""})}
+function opts(){var p=P[cur],g={type:"linear",rotation:Math.PI/4,colorStops:[{offset:0,color:p[0]},{offset:1,color:p[1]}]};
+return{width:600,height:600,type:"canvas",margin:0,data:$("txt").value||" ",qrOptions:{errorCorrectionLevel:"H"},
+dotsOptions:{type:$("dot").value,gradient:g},cornersSquareOptions:{type:$("eye").value,color:p[0]},
+cornersDotOptions:{type:"dot",color:p[1]},backgroundOptions:{color:"#ffffff"}}}
+var qr=new QRCodeStyling(opts());
+function draw(){qr.update(opts());clearTimeout(timer);timer=setTimeout(function(){
+qr.getRawData("png").then(function(b){var r=new FileReader();r.onload=function(){$("out").src=r.result};r.readAsDataURL(b)})},120)}
+["txt","dot","eye"].forEach(function(id){$(id).addEventListener("input",draw)});
+function tab(g){$("pS").classList.toggle("hidden",g);$("pG").classList.toggle("hidden",!g);$("tS").className=g?"":"on";$("tG").className=g?"on":""}
+$("tS").onclick=function(){tab(false)};$("tG").onclick=function(){tab(true)};
+mark();draw();
+</script>
+</body>
+</html>
